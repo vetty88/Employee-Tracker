@@ -114,14 +114,106 @@ function addDept() {
         "INSERT INTO department SET ?",
         {
           name: answer.dept,
-          id: 2
-          // category: answer.category,
-          // starting_bid: answer.startingBid || 0,
-          // highest_bid: answer.startingBid || 0
+  
+        
         },
         function(err) {
           if (err) throw err;
           console.log("Your department was created successfully!");
+          // re-prompt the user for if they want to bid or post
+          // start();
+        }
+      );
+    });
+}
+
+
+
+// function to handle posting new items up for auction
+function addRole() {
+  // prompt for info about the item being put up for auction
+  inquirer
+    .prompt([
+      {
+        name: "role",
+        type: "input",
+        message: "What is the role title?"
+      },
+      // {
+      //   name: "category",
+      //   type: "input",
+      //   message: "What category would you like to place your auction in?"
+      // },
+      // {
+      //   name: "startingBid",
+      //   type: "input",
+      //   message: "What would you like your starting bid to be?",
+      //   validate: function(value) {
+      //     if (isNaN(value) === false) {
+      //       return true;
+      //     }
+      //     return false;
+      //   }
+      // }
+    ])
+    .then(function(answer) {
+      // when finished prompting, insert a new item into the db with that info
+      connection.query(
+        "INSERT INTO role SET ?",
+        {
+          title: answer.role,
+  
+        
+        },
+        function(err) {
+          if (err) throw err;
+          console.log("Your role was created successfully!");
+          // re-prompt the user for if they want to bid or post
+          // start();
+        }
+      );
+    });
+}
+
+// function to handle posting new items up for auction
+function addEmployee() {
+  // prompt for info about the item being put up for auction
+  inquirer
+    .prompt([
+      {
+        name: "employee",
+        type: "input",
+        message: "What is the employee first name?"
+      },
+      // {
+      //   name: "category",
+      //   type: "input",
+      //   message: "What category would you like to place your auction in?"
+      // },
+      // {
+      //   name: "startingBid",
+      //   type: "input",
+      //   message: "What would you like your starting bid to be?",
+      //   validate: function(value) {
+      //     if (isNaN(value) === false) {
+      //       return true;
+      //     }
+      //     return false;
+      //   }
+      // }
+    ])
+    .then(function(answer) {
+      // when finished prompting, insert a new item into the db with that info
+      connection.query(
+        "INSERT INTO employee SET ?",
+        {
+          first_name: answer.employee,
+  
+        
+        },
+        function(err) {
+          if (err) throw err;
+          console.log("Your employee was created successfully!");
           // re-prompt the user for if they want to bid or post
           // start();
         }
