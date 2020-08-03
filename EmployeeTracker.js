@@ -62,20 +62,20 @@ function runSearch() {
 
         
       case "2.3 VIEW Employees":
-        viewRole();
+        viewEmployee();
         break;
 
         case "3.1 UPDATE Departments":
-          viewDept();
+          updateDept();
           break;
   
         case "3.2 UPDATE Roles":
-          viewRole();
+          updateRole();
           break;
   
           
         case "3.3 UPDATE Employees":
-          viewRole();
+          updateRole();
           break;
       }
     });
@@ -220,6 +220,17 @@ function addEmployee() {
       );
     });
 }
+
+function viewDept() {
+    var query = "SELECT name FROM department";
+    connection.query(query, function(err, res) {
+      if (err) throw err;
+      for (var i = 0; i < res.length; i++) {
+        console.log(res[i].name);
+      }
+      runSearch();
+    });
+  }
 
 // function bidAuction() {
 //   // query the database for all items being auctioned
