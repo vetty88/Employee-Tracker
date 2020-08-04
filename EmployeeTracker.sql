@@ -1,27 +1,30 @@
-DROP DATABASE IF EXISTS EmployeeTrackerDB;
-CREATE database EmployeeTrackerDB;
+DROP DATABASE IF EXISTS employeetrackerdb;
+CREATE DATABASE employeetrackerdb;
+USE employeetrackerdb;
 
-USE EmployeeTrackerDB;
-
-CREATE TABLE department (
-  id INT AUTO_INCREMENT,
-  name VARCHAR(30) NULL,
-  PRIMARY KEY (id)
-);
-
-CREATE TABLE role (
-  id INT AUTO_INCREMENT,
-  title VARCHAR(100) NULL,
-  salary DECIMAL(10,4) NULL,
-  department_id INT NULL,
-  PRIMARY KEY (id)
-);
-  
-CREATE TABLE employee (
-  id INT AUTO_INCREMENT,
-  first_name VARCHAR(30) NULL,
-  last_name VARCHAR(30) NULL,
-  role_id  INT NULL,
-  manager_id  INT NULL,
-  PRIMARY KEY (id)
-);
+CREATE TABLE department 
+    (departmentId int NOT NULL,
+    departmentName VARCHAR(30) NOT NULL,
+    PRIMARY KEY (departmentId)
+    );
+    
+CREATE TABLE role 
+    (roleId INT NOT NULL, 
+    title VARCHAR(30)NOT NULL, 
+    salary DECIMAL (10,2) NOT NULL, 
+    departmentId INT,
+    PRIMARY KEY(roleId), 
+    FOREIGN KEY (departmentId) REFERENCES department(departmentId)
+    );
+    
+CREATE TABLE employee 
+    (employeeId INT NOT NULL, 
+    firstName VARCHAR(30) NOT NULL, 
+    lastName VARCHAR(30) NOT NULL, 
+    roleId INT,
+    managerId INT,
+    departmentId INT,
+    PRIMARY KEY(employeeId),
+    FOREIGN KEY (roleId) REFERENCES role(roleId),
+    FOREIGN KEY (departmentId) REFERENCES department(departmentId)
+    );

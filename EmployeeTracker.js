@@ -1,7 +1,9 @@
-var mysql = require("mysql");
-var inquirer = require("inquirer");
+/*jshint esversion: 8 */ 
+const mysql = require("mysql");
+const inquirer = require("inquirer");
+const cTable = require('console.table');
 
-var connection = mysql.createConnection({
+const connection = mysql.createConnection({
   host: "localhost",
 
   // Your port; if not 3306
@@ -20,412 +22,247 @@ connection.connect(function(err) {
   runSearch();
 });
 
-function runSearch() {
-  inquirer
-    .prompt({
-      name: "action",
-      type: "rawlist",
-      message: "What would you like to do?",
+const actions = [
+
+  {
+      type: "list",
+      name: "actions",
+      message: "What would you like to to?",
       choices: [
-        "1.1 ADD Departments",
-        "1.2 ADD Roles",
-        "1.3 ADD Employees",
-        "2.1 VIEW Departments",
-        "2.2 VIEW Roles",
-        "2.3 VIEW Employees",
-        "3.1 UPDATE Departments",
-        "3.2 UPDATE Roles",
-        "3.3 UPDATE Employees",
+
+          "Add new employee",
+          "View all employees",
+          "View employees by department",
+          "Update employee role",
+          "View all roles",
+          "Add role",
+          "View all departments",
+          "Add department",
+          "Exit"
+
       ]
-    })
-    .then(function(answer) {
-      switch (answer.action) {
-      case "1.1 ADD Departments":
-        addDept();
-        break;
 
-      case "1.2 ADD Roles":
-        addRole();
-        break;
-
-      case "1.3 ADD Employees":
-        addEmployee();
-        break;
-
-      case "2.1 VIEW Departments":
-        viewDept();
-        break;
-
-      case "2.2 VIEW Roles":
-        viewRole();
-        break;
-
-        
-      case "2.3 VIEW Employees":
-        viewEmployee();
-        break;
-
-        case "3.1 UPDATE Departments":
-          updateDept();
-          break;
-  
-        case "3.2 UPDATE Roles":
-          updateRole();
-          break;
-  
-          
-        case "3.3 UPDATE Employees":
-          updateRole();
-          break;
-      }
-    });
-}
-
-// function to handle posting new items up for auction
-function addDept() {
-  // prompt for info about the item being put up for auction
-  inquirer
-    .prompt([
-      {
-        name: "dept",
-        type: "input",
-        message: "What is the department name?"
-      },
-      // {
-      //   name: "category",
-      //   type: "input",
-      //   message: "What category would you like to place your auction in?"
-      // },
-      // {
-      //   name: "startingBid",
-      //   type: "input",
-      //   message: "What would you like your starting bid to be?",
-      //   validate: function(value) {
-      //     if (isNaN(value) === false) {
-      //       return true;
-      //     }
-      //     return false;
-      //   }
-      // }
-    ])
-    .then(function(answer) {
-      // when finished prompting, insert a new item into the db with that info
-      connection.query(
-        "INSERT INTO department SET ?",
-        {
-          name: answer.dept,
-  
-        
-        },
-        function(err) {
-          if (err) throw err;
-          console.log("Your department was created successfully!");
-          // re-prompt the user for if they want to bid or post
-          // start();
-        }
-      );
-    });
-}
-
-
-
-// function to handle posting new items up for auction
-function addRole() {
-  // prompt for info about the item being put up for auction
-  inquirer
-    .prompt([
-      {
-        name: "role",
-        type: "input",
-        message: "What is the role title?"
-      },
-      // {
-      //   name: "category",
-      //   type: "input",
-      //   message: "What category would you like to place your auction in?"
-      // },
-      // {
-      //   name: "startingBid",
-      //   type: "input",
-      //   message: "What would you like your starting bid to be?",
-      //   validate: function(value) {
-      //     if (isNaN(value) === false) {
-      //       return true;
-      //     }
-      //     return false;
-      //   }
-      // }
-    ])
-    .then(function(answer) {
-      // when finished prompting, insert a new item into the db with that info
-      connection.query(
-        "INSERT INTO role SET ?",
-        {
-          title: answer.role,
-  
-        
-        },
-        function(err) {
-          if (err) throw err;
-          console.log("Your role was created successfully!");
-          // re-prompt the user for if they want to bid or post
-          // start();
-        }
-      );
-    });
-}
-
-// function to handle posting new items up for auction
-function addEmployee() {
-  // prompt for info about the item being put up for auction
-  inquirer
-    .prompt([
-      {
-        name: "employee",
-        type: "input",
-        message: "What is the employee first name?"
-      },
-      // {
-      //   name: "category",
-      //   type: "input",
-      //   message: "What category would you like to place your auction in?"
-      // },
-      // {
-      //   name: "startingBid",
-      //   type: "input",
-      //   message: "What would you like your starting bid to be?",
-      //   validate: function(value) {
-      //     if (isNaN(value) === false) {
-      //       return true;
-      //     }
-      //     return false;
-      //   }
-      // }
-    ])
-    .then(function(answer) {
-      // when finished prompting, insert a new item into the db with that info
-      connection.query(
-        "INSERT INTO employee SET ?",
-        {
-          first_name: answer.employee,
-  
-        
-        },
-        function(err) {
-          if (err) throw err;
-          console.log("Your employee was created successfully!");
-          // re-prompt the user for if they want to bid or post
-          // start();
-        }
-      );
-    });
-}
-
-function viewDept() {
-    var query = "SELECT name FROM department";
-    connection.query(query, function(err, res) {
-      if (err) throw err;
-      for (var i = 0; i < res.length; i++) {
-        console.log(res[i].name);
-      }
-      runSearch();
-    });
   }
+];
 
-// function bidAuction() {
-//   // query the database for all items being auctioned
-//   connection.query("SELECT * FROM auctions", function(err, results) {
-//     if (err) throw err;
-//     // once you have the items, prompt the user for which they'd like to bid on
-//     inquirer
-//       .prompt([
-//         {
-//           name: "choice",
-//           type: "rawlist",
-//           choices: function() {
-//             var choiceArray = [];
-//             for (var i = 0; i < results.length; i++) {
-//               choiceArray.push(results[i].item_name);
-//             }
-//             return choiceArray;
-//           },
-//           message: "What auction would you like to place a bid in?"
-//         },
-//         {
-//           name: "bid",
-//           type: "input",
-//           message: "How much would you like to bid?"
-//         }
-//       ])
-//       .then(function(answer) {
-//         // get the information of the chosen item
-//         var chosenItem;
-//         for (var i = 0; i < results.length; i++) {
-//           if (results[i].item_name === answer.choice) {
-//             chosenItem = results[i];
-//           }
-//         }
+//initial function that will input the  user what they would like to do 
+determineAction();
+async function determineAction() {
 
-//         // determine if bid was high enough
-//         if (chosenItem.highest_bid < parseInt(answer.bid)) {
-//           // bid was high enough, so update db, let the user know, and start over
-//           connection.query(
-//             "UPDATE auctions SET ? WHERE ?",
-//             [
-//               {
-//                 highest_bid: answer.bid
-//               },
-//               {
-//                 id: chosenItem.id
-//               }
-//             ],
-//             function(error) {
-//               if (error) throw err;
-//               console.log("Bid placed successfully!");
-//               start();
-//             }
-//           );
-//         }
-//         else {
-//           // bid wasn't high enough, so apologize and start over
-//           console.log("Your bid was too low. Try again...");
-//           start();
-//         }
-//       });
-//   });
-// }
+    const results = await inquirer.prompt(questions.actions);
+    switch (results.actions) {
+        case 'Add new employee': //ok
+            addEmployee();
+            break;
+        case 'View all employees': //ok
+            viewAll();
+            break;
+        case 'View employees by department':
+            viewByDept();
+            break;
+        case 'Update employee role': //ok
+            updateRole();
+            break;
+        case 'View all roles':
+            viewAllRoles(); //ok
+            break;
+        case "Add role":
+            addRole(); //ok
+            break;
+        case 'View all departments':
+            viewAllDept(); //ok
+            break;
+        case 'Add department':
+            addDept(); //ok
+            break;
+
+        default:
+            connection.end();
+            break;
+
+    }
+}
+
+function addEmployee() {
+
+    connection.query("SELECT * FROM role", function (err, results) {
+        if (err) throw err;
+
+        inquirer.prompt([
+
+            {
+                type: "input",
+                name: "firstname",
+                message: "What is the employee's first name?"
+            },
+            {
+                type: "input",
+                name: "lastname",
+                message: "What is the employee's last name?"
+            },
+            {
+                name: "choice",
+                type: "rawlist",
+                choices: function () {
+                    var choiceArray = [];
+                    for (var i = 0; i < results.length; i++) {
+                        choiceArray.push(results[i].title);
+                    }
+
+                    return choiceArray;
+                },
+                message: "What is the employee's role?"
+            },
+
+            {
+                type: "input",
+                name: "empmanager",
+                message: "What is the employee's manager?"
+            }
+
+        ]).then(function (res) {
 
 
-// function artistSearch() {
-//   inquirer
-//     .prompt({
-//       name: "artist",
-//       type: "input",
-//       message: "What artist would you like to search for?"
-//     })
-//     .then(function(answer) {
-//       var query = "SELECT position, song, year FROM top5000 WHERE ?";
-//       connection.query(query, { artist: answer.artist }, function(err, res) {
-//         for (var i = 0; i < res.length; i++) {
-//           console.log("Position: " + res[i].position + " || Song: " + res[i].song + " || Year: " + res[i].year);
-//         }
-//         runSearch();
-//       });
-//     });
-// }
+            for (var i = 0; i < results.length; i++) {
+                if (results[i].title === res.choice) {
+                    res.role_id = results[i].id;
+                }
+            }
+            var query = "INSERT INTO employee SET ?";
+            const VALUES = {
+                first_name: res.firstname,
+                last_name: res.lastname,
+                role_id: res.role_id
+                // manager_id: employee(id)
+            };
+            connection.query(query, VALUES, function (err) {
+                if (err) throw err;
+                console.log("Employee successfully added!");
+                determineAction();
+            }
 
-// function multiSearch() {
-//   var query = "SELECT artist FROM top5000 GROUP BY artist HAVING count(*) > 1";
-//   connection.query(query, function(err, res) {
-//     for (var i = 0; i < res.length; i++) {
-//       console.log(res[i].artist);
-//     }
-//     runSearch();
-//   });
-// }
+            );
+        });
+    });
 
-// function rangeSearch() {
-//   inquirer
-//     .prompt([
-//       {
-//         name: "start",
-//         type: "input",
-//         message: "Enter starting position: ",
-//         validate: function(value) {
-//           if (isNaN(value) === false) {
-//             return true;
-//           }
-//           return false;
-//         }
-//       },
-//       {
-//         name: "end",
-//         type: "input",
-//         message: "Enter ending position: ",
-//         validate: function(value) {
-//           if (isNaN(value) === false) {
-//             return true;
-//           }
-//           return false;
-//         }
-//       }
-//     ])
-//     .then(function(answer) {
-//       var query = "SELECT position,song,artist,year FROM top5000 WHERE position BETWEEN ? AND ?";
-//       connection.query(query, [answer.start, answer.end], function(err, res) {
-//         for (var i = 0; i < res.length; i++) {
-//           console.log(
-//             "Position: " +
-//               res[i].position +
-//               " || Song: " +
-//               res[i].song +
-//               " || Artist: " +
-//               res[i].artist +
-//               " || Year: " +
-//               res[i].year
-//           );
-//         }
-//         runSearch();
-//       });
-//     });
-// }
+}
 
-// function songSearch() {
-//   inquirer
-//     .prompt({
-//       name: "song",
-//       type: "input",
-//       message: "What song would you like to look for?"
-//     })
-//     .then(function(answer) {
-//       console.log(answer.song);
-//       connection.query("SELECT * FROM top5000 WHERE ?", { song: answer.song }, function(err, res) {
-//         console.log(
-//           "Position: " +
-//             res[0].position +
-//             " || Song: " +
-//             res[0].song +
-//             " || Artist: " +
-//             res[0].artist +
-//             " || Year: " +
-//             res[0].year
-//         );
-//         runSearch();
-//       });
-//     });
-// }
 
-// function songAndAlbumSearch() {
-//   inquirer
-//     .prompt({
-//       name: "artist",
-//       type: "input",
-//       message: "What artist would you like to search for?"
-//     })
-//     .then(function(answer) {
-//       var query = "SELECT top_albums.year, top_albums.album, top_albums.position, top5000.song, top5000.artist ";
-//       query += "FROM top_albums INNER JOIN top5000 ON (top_albums.artist = top5000.artist AND top_albums.year ";
-//       query += "= top5000.year) WHERE (top_albums.artist = ? AND top5000.artist = ?) ORDER BY top_albums.year, top_albums.position";
+function viewAll() {
+    connection.query("SELECT first_name AS FirstName , last_name as LastName , role.title as Role, role.salary AS Salary, department.name AS Department FROM employee INNER JOIN department ON department.id = employee.role_id left JOIN role ON role.id = employee.role_id", function (err, results) {
+        console.table(results);
+        if (err) throw err;
+        determineAction();
+    });
+}
 
-//       connection.query(query, [answer.artist, answer.artist], function(err, res) {
-//         console.log(res.length + " matches found!");
-//         for (var i = 0; i < res.length; i++) {
-//           console.log(
-//             i+1 + ".) " +
-//               "Year: " +
-//               res[i].year +
-//               " Album Position: " +
-//               res[i].position +
-//               " || Artist: " +
-//               res[i].artist +
-//               " || Song: " +
-//               res[i].song +
-//               " || Album: " +
-//               res[i].album
-//           );
-//         }
+function viewAllDept() {
+    connection.query("SELECT name AS Departments FROM department ", function (err, results) {
+        console.table(results);
+        if (err) throw err;
+        determineAction();
+    });
+}
 
-//         runSearch();
-      // });
-//     });
-// }
+function viewAllRoles() {
+    connection.query("Select title as Roles from role ", function (err, results) {
+        console.table(results);
+        if (err) throw err;
+        determineAction();
+    });
+}
+
+
+function addDept() {
+    inquirer
+        .prompt({
+            name: "newDept",
+            type: "input",
+            message: "Which Department would you like to add?"
+        })
+        .then(function (result) {
+
+
+            var query = "INSERT INTO department SET?";
+            console.log(query);
+            var query1 = connection.query(query, [{ name: result.newDept }], function (err) {
+                if (err) throw err;
+                console.table("Department Created Successfully!");
+                determineAction();
+            });
+
+
+        });
+}
+
+function addRole() {
+    //selecting all columns for department so I can further loop over and get the department ID
+    var roleQuery = "SELECT * FROM role;";
+    var departmentQuery = "SELECT * FROM department;";
+
+
+    connection.query(roleQuery, function (err, roles) {
+        connection.query(departmentQuery, function (err, departments) {
+
+            if (err) throw err;
+
+
+            inquirer.prompt([
+
+                {
+                    name: "newRole",
+                    type: "rawlist",
+                    choices: function () {
+                        var arrayOfChoices = [];
+                        for (var i = 0; i < roles.length; i++) {
+                            arrayOfChoices.push(roles[i].title);
+                        }
+
+                        return arrayOfChoices;
+                    },
+                    message: "Which Role would you like to add?"
+                },
+                {
+                    name: "newSalary",
+                    type: "input",
+                    message: "What is the salary you would like to add?"
+
+                },
+                {
+                    name: "choice",
+                    type: "rawlist",
+                    choices: function () {
+                        var arrayOfChoices = [];
+                        for (var i = 0; i < departments.length; i++) {
+                            arrayOfChoices.push(departments[i].name);
+                        }
+
+                        return arrayOfChoices;
+                    },
+                    message: "Which department this role belongs to?"
+                },
+
+            ]).then(function (result) {
+
+                for (var i = 0; i < departments.length; i++) {
+                    if (departments[i].name === result.choice) {
+                        result.department_id = departments[i].id;
+                    }
+                }
+                var query = "INSERT INTO role SET ?";
+                const VALUES = {
+
+                    title: result.newRole,
+                    salary: result.newSalary,
+                    department_id: result.department_id
+                };
+                connection.query(query, VALUES, function (err) {
+                    if (err) throw err;
+                    console.table("Role Successfuly created!");
+                    determineAction();
+                });
+
+            });
+        });
+    });
+}
