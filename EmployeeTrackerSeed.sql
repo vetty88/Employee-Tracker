@@ -1,19 +1,39 @@
 USE employeetrackerdb; 
 
-INSERT INTO department 
-    (departmentId,
-    departmentName)
-VALUES      (1, "sales"), 
-            (2, "engineering"), 
-            (3, "legal"), 
-            (4, "finance"), 
-            (5, "marketing"); 
+INSERT INTO employee 
+    (employeeId,
+    firstName, 
+    lastName, 
+    roleId, 
+    managerId) 
+    
+VALUES      
+    (1, "yvette", 
+    "waller", 
+    2, 
+    2),
+
+    (2, "travis", 
+    "hammond", 
+    6,
+    0),
+
+    (3, "rohan", 
+    "hood", 
+    5, 
+    4),
+
+    (4, "lex", 
+    "hammond", 
+    1,
+    0);
 
 INSERT INTO role 
     (roleId, 
     title, 
-    salary, 
+    salary,
     departmentId) 
+
 VALUES      
     (1, "sales lead", 
         80000, 
@@ -37,32 +57,13 @@ VALUES
         200000, 
         3); 
 
-INSERT INTO employee 
-    (employeeId,
-    firstName, 
-    lastName, 
-    roleId, 
-    managerId,
-    departmentId) 
-    
-VALUES      
-    (1, "yvette", 
-        "waller", 
-        2, 
-        2,
-        2), 
-    (2, "travis", 
-        "hammond", 
-        6,
-        0, 
-        2), 
-    (3, "rohan", 
-        "hood", 
-        5, 
-        4,
-        1), 
-    (4, 'lex', 
-        "hammond", 
-        1,
-        0, 
-        2); 
+INSERT INTO department 
+    (departmentId,
+    departmentName)
+VALUES      (1, "sales"), 
+            (2, "engineering"), 
+            (3, "legal"), 
+            (4, "finance"), 
+            (5, "marketing"); 
+
+ 

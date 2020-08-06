@@ -1,15 +1,21 @@
 {
-  "name": "top-5000-songs",
+  "name": "employee-tracker",
   "version": "1.0.0",
   "description": "",
-  "main": "TopSongsCode.js",
+  "main": "EmployeeTracker.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "chalk": "^4.1.0",
+    "clear": "^0.1.0",
+    "console": "^0.7.2",
+    "console-clear": "^1.1.1",
+    "console.table": "^0.10.0",
     "inquirer": "^6.2.1",
-    "mysql": "^2.16.0"
+    "mysql": "^2.18.1",
+    "table": "^5.4.6"
   }
 }
