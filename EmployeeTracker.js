@@ -6,6 +6,7 @@ const inquirer = require("inquirer");
 const mysql = require('mysql');
 const cTable = require('console.table');
 const clear = require('console-clear');
+const promisemysql = require("promise-mysql");
 
 // MySQL DB Connection Information (remember to change this with your specific credentials)
 const connection = mysql.createConnection({
@@ -164,11 +165,14 @@ function promptManagers(managers) {
 function queryEmployeesAll() {
     //sql query
     const query = `
-    SELECT employee.employeeId, employee.firstName, employee.lastName, role.title, role.salary, department.departmentName AS departmentName, concat(manager.firstName, " ", manager.lastName) AS managerFullName
+    SELECT employee.employeeId, employee.firstName, employee.lastName, 
+    role.title, role.salary, 
+    department.departmentName AS departmentName, concat(manager.firstName, " ", manager.lastName) AS managerFullName
     FROM employee 
-    LEFT JOIN role ON employee.roleId = role.roleId
+
+    LEFT JOIN role ON employee.employeeId = employee.employeeId
     LEFT JOIN department ON department.departmentId = role.departmentId
-	LEFT JOIN employee as manager ON employee.managerId = manager.ManagerId;`;
+	LEFT JOIN employee as manager ON employee.managerId = manager.managerId;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //build table data array from query result
@@ -220,7 +224,7 @@ function queryDepartmentsCallBack(callback) {
 
 // Query the departments without employees
 function queryDepartmentsOnly() {
-    const query = `SELECT id, department.departmentName FROM department;`;
+    const query = `SELECT department.departmentId, department.departmentName FROM department;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -288,7 +292,7 @@ function queryEmployeesByDepartment(department) {
         const tableData = [];
         for (let i = 0; i < res.length; i++) {
             tableData.push({
-                "ID": res[i].id,
+                "Employee ID": res[i].employeeId,
                 "First Name": res[i].firstName,
                 "Last Name": res[i].lastName,
                 "Role": res[i].title,
@@ -334,6 +338,7 @@ function queryEmployeesByManager(manager) {
 
 //add employee
 function addEmployee() {
+
     //initialize newEmployee object
     const newEmployee = {
         firstName: "",
@@ -394,7 +399,7 @@ function addEmployee() {
                         let chosenRoleID;
                         for (let i = 0; i < roles.length; i++) {
                             if (roles[i].title === chosenRole) {
-                                chosenRoleID = roles[i].id;
+                                chosenRoleID = roles[i].roleId;
                             }
                         }
                         //set newEmployee role ID 
@@ -412,7 +417,7 @@ function addEmployee() {
                             for (let i = 0; i < res.length; i++) {
                                 managersNames.push(res[i].fullName);
                                 managers.push({
-                                    id: res[i].id,
+                                    id: res[i].managerId,
                                     fullName: res[i].fullName
                                 });
                             }
@@ -447,7 +452,7 @@ function addEmployee() {
                                         if (err) throw err;
                                         console.log("Employee Added");
                                         //show updated employee table
-                                        setTimeout(queryEmployeesAll, 500);
+                                        // setTimeout(queryEmployeesAll, 500);
                                     });
                                 });
                         });
@@ -459,7 +464,7 @@ function addEmployee() {
 function addDepartment() {
     inquirer
         .prompt([{
-            name: "dName",
+            name: "departmentName",
             type: "input",
             message: "Enter new Department title:",
             validate: async function confirmStringInput(input) {
@@ -470,7 +475,7 @@ function addDepartment() {
             },
         }, ])
         .then((answer) => {
-            const query = `INSERT INTO department (name) VALUES (?);`;
+            const query = `INSERT INTO department (departmentName) VALUES (?);`;
             connection.query(query, [answer.departmentName], (err, res) => {
                 if (err) throw err;
                 console.log("  New Department added successfully!");
@@ -487,13 +492,13 @@ function addRole() {
     const departments = [];
     const departmentsName = [];
     //sql query
-    const query = `SELECT id, departmentName FROM department`;
+    const query = `SELECT department.departmentId, department.departmentName FROM department`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         for (let i = 0; i < res.length; i++) {
             departments.push({
-                id: res[i].departmentId,
-                name: res[i].departmentName
+                departmentId: res[i].departmentId,
+                departmentName: res[i].departmentName
             });
             departmentsName.push(res[i].departmentName);
         }
@@ -529,7 +534,7 @@ function addRole() {
             ])
             .then((answer) => {
 
-                let deptID = departments.find((obj) => obj.name === answer.roleDept).id;
+                let deptID = departments.find((obj) => obj.name === answer.roleDept);
                 connection.query("INSERT INTO role (title, salary, departmentId) VALUES (?, ?, ?)",
                     [answer.rName, answer.salNum, deptID], (err, res) => {
                         if (err) throw err;
@@ -544,7 +549,7 @@ function addRole() {
 // Remove an employee from the database
 function removeEmployee() {
     const query = `
-    SELECT id, concat(employee.firstName, " ", employee.lastName) AS employeeFullName
+    SELECT employee.employeeId, concat(employee.firstName, " ", employee.lastName) AS employeeFullName
     FROM employee ;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -592,7 +597,7 @@ function removeEmployee() {
 // Remove a role from the database
 function removeRole() {
     const query = `
-    SELECT id, role.title FROM role;`;
+    SELECT role.roleId, role.title FROM role;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -640,7 +645,7 @@ function removeRole() {
 // Remove a department from the database
 function removeDepartment() {
     const query = `
-    SELECT id, department.departmentName FROM department;`;
+    SELECT department.departmentId, department.departmentName FROM department;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -665,7 +670,7 @@ function removeDepartment() {
                 const chosenDepartment = answer.departmentsPromptChoice;
                 let chosenDepartmentId;
                 for (let i = 0; i < departments.length; i++) {
-                    if (departments[i].name === chosenDepartment) {
+                    if (departments[i].departmentName === chosenDepartment) {
                         chosenDepartmentId = departments[i].departmentId;
                         break;
                     }
