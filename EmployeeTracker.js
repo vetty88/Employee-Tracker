@@ -295,9 +295,11 @@ function queryEmployeesByDepartment(department) {
                 "Employee ID": res[i].employeeId,
                 "First Name": res[i].firstName,
                 "Last Name": res[i].lastName,
+                "Role Id": res[i].roleId,
                 "Role": res[i].title,
                 "Salary": res[i].salary,
-                "Manager": res[i].managerFullName
+                "Manager ID": res[i].managerId,
+                "Manager": res[i].managerFullName,
             });
         }
         //render screen
@@ -341,10 +343,13 @@ function addEmployee() {
 
     //initialize newEmployee object
     const newEmployee = {
+        employeeId: "",
         firstName: "",
         lastName: "",
-        roleID: 0,
-        managerID: 0
+        roleID: "",
+        title: "",
+        managerID: "",
+        manager: "",
     };
     //new employee name prompt
     inquirer
@@ -372,7 +377,40 @@ function addEmployee() {
             newEmployee.firstName = answers.firstName;
             newEmployee.lastName = answers.lastName;
             //sql query for roles
-            const query = `SELECT role.title, role.roleId FROM role;`;
+
+        const query = `SELECT role.roleId, role.title FROM role;`;
+         connection.query(query, (err, res) => {
+        if (err) throw err;
+        //extract department names to array
+        const roles = [];
+        const rolesNames = [];
+        for (let i = 0; i < res.length; i++) {
+            roles.push({
+                roleId: res[i].roleId,
+                title: res[i].title
+            });
+            rolesNames.push(res[i].title);
+        }
+        //prompt for role
+        inquirer
+            .prompt({
+                type: "list",
+                name: "rolesPromptChoice",
+                message: "Select Role",
+                choices: rolesNames
+            })
+            .then(answer => {
+                //get id of chosen department
+                const chosenRole = answer.rolesPromptChoice;
+                let chosenRoleID;
+                for (let i = 0; i < roles.length; i++) {
+                    if (roles[i].title === chosenRole) {
+                        chosenRoleID = roles[i].roleId;
+                        break;
+                    }
+                }
+    
+            const query = `SELECT role.roleId, role.title FROM role;`;
             connection.query(query, (err, res) => {
                 if (err) throw err;
                 //extract role names and ids to arrays
@@ -380,30 +418,15 @@ function addEmployee() {
                 const rolesNames = [];
                 for (let i = 0; i < res.length; i++) {
                     roles.push({
-                        id: res[i].roleId,
+                        roleId: res[i].roleId,
                         title: res[i].title
                     });
+                   
                     rolesNames.push(res[i].title);
                 }
-                //prompt for role selection
-                inquirer
-                    .prompt({
-                        type: "list",
-                        name: "rolePromptChoice",
-                        message: "Select Role:",
-                        choices: rolesNames
-                    })
-                    .then(answer => {
-                        //get id of chosen role
-                        const chosenRole = answer.rolePromptChoice;
-                        let chosenRoleID;
-                        for (let i = 0; i < roles.length; i++) {
-                            if (roles[i].title === chosenRole) {
-                                chosenRoleID = roles[i].roleId;
-                            }
-                        }
                         //set newEmployee role ID 
                         newEmployee.roleID = chosenRoleID;
+                        newEmployee.title = chosenRole;
                         //sql query for managers
                         const query = `
                     SELECT DISTINCT concat(manager.firstName, " ", manager.lastName) AS fullName, manager.ManagerId
@@ -440,16 +463,25 @@ function addEmployee() {
                                         }
                                     }
                                     //set newEmployee manager ID
-                                    newEmployee.managerID = chosenManagerID;
+                                    newEmployee.manager = chosenManager;
+                                    newEmployee.managerId = 0;
+                                    newEmployee.roleId = 0;
+                                    newEmployee.employeeId = 0;
+
                                     //add employee insert sql query
+                                    
                                     const query = "INSERT INTO employee SET ?";
                                     connection.query(query, {
+                                        employeeID: newEmployee.employeeId,
                                         firstName: newEmployee.firstName,
                                         lastName: newEmployee.lastName,
-                                        roleId: newEmployee.roleId || 0,
-                                        managerId: newEmployee.managerId || 0
+                                        title: newEmployee.title,
+                                        roleId: newEmployee.roleId,
+                                        manager: newEmployee.manager,
+                                        managerId: newEmployee.managerId,
                                     }, (err, res) => {
                                         if (err) throw err;
+                                        
                                         console.log("Employee Added");
                                         //show updated employee table
                                         // setTimeout(queryEmployeesAll, 500);
@@ -459,6 +491,7 @@ function addEmployee() {
                     });
             });
         });
+});
 }
 
 function addDepartment() {
@@ -486,6 +519,7 @@ function addDepartment() {
 
         });
 }
+
 
 function addRole() {
     //initialize 
@@ -597,7 +631,7 @@ function removeEmployee() {
 // Remove a role from the database
 function removeRole() {
     const query = `
-    SELECT role.roleId, role.title FROM role;`;
+    SELECT roleId, title FROM role;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -605,7 +639,7 @@ function removeRole() {
         const rolesNames = [];
         for (let i = 0; i < res.length; i++) {
             roles.push({
-                id: res[i].roleId,
+                roleId: res[i].roleId,
                 title: res[i].title
             });
             rolesNames.push(res[i].title);
