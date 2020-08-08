@@ -164,15 +164,22 @@ function promptManagers(managers) {
 //query all employees
 function queryEmployeesAll() {
     //sql query
+     
+        
+        // departmentTable.departmentName AS dName,
     const query = `
-    SELECT employee.employeeId, employee.firstName, employee.lastName, 
-    role.title, role.salary, 
-    department.departmentName AS departmentName, concat(manager.firstName, " ", manager.lastName) AS managerFullName
-    FROM employee 
+    SELECT employeeId, firstName, lastName, roleId, title, managerId, manager
+    FROM employeeTable AS eTable
+   
+    `; 
+     // SELECT roleTable.title, roleTable.salary
+    // FROM roleTable
 
-    LEFT JOIN role ON employee.employeeId = employee.employeeId
-    LEFT JOIN department ON department.departmentId = role.departmentId
-	LEFT JOIN employee as manager ON employee.managerId = manager.managerId;`;
+    // LEFT JOIN roleTable ON roleTable.title = employeeTable.title
+    // // LEFT JOIN roleTable ON roleTable.salary = employeeTable.salary 
+    // LEFT JOIN departmentTable ON departmentTable.departmentId = roleTable.departmentId
+
+    
     connection.query(query, (err, res) => {
         if (err) throw err;
         //build table data array from query result
@@ -182,10 +189,10 @@ function queryEmployeesAll() {
                 "ID": res[i].employeeId,
                 "First Name": res[i].firstName,
                 "Last Name": res[i].lastName,
-                "Role": res[i].title,
-                "Salary": res[i].salary,
-                "Department": res[i].departmentName,
-                "Manager": res[i].managerFullName
+                "Role ID": res[i].roleId,
+                "Title": res[i].title,
+                "Manager ID": res[i].managerId,
+                "Manager": res[i].manager,
             });
         }
         //render screen
@@ -195,7 +202,7 @@ function queryEmployeesAll() {
 
 //query all departments
 function queryDepartments() {
-    const query = `SELECT department.departmentName FROM department;`;
+    const query = `SELECT departmentTable.departmentName FROM departmentTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -209,7 +216,7 @@ function queryDepartments() {
 }
 
 function queryDepartmentsCallBack(callback) {
-    const query = `SELECT department.departmentName FROM department;`;
+    const query = `SELECT departmentTable.departmentName FROM departmentTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -224,7 +231,7 @@ function queryDepartmentsCallBack(callback) {
 
 // Query the departments without employees
 function queryDepartmentsOnly() {
-    const query = `SELECT department.departmentId, department.departmentName FROM department;`;
+    const query = `SELECT departmentTable.departmentId, departmentTable.departmentName FROM departmentTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -242,7 +249,7 @@ function queryDepartmentsOnly() {
 
 // Query the Roles only and display them for viewing
 function queryRolesOnly() {
-    const query = `SELECT roleId, title FROM employeetrackerdb.role;`;
+    const query = `SELECT roleId, title FROM employeeTabletrackerdb.role;`;
     //build table data array from query result
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -262,8 +269,8 @@ function queryRolesOnly() {
 function queryManagers() {
     const query = `
     SELECT DISTINCT concat(manager.firstName, " ", manager.lastName) AS fullName
-    FROM employee
-    LEFT JOIN employee AS manager ON manager.ManagerId = employee.managerId;`;
+    FROM employeeTable
+    LEFT JOIN employeeTable AS manager ON manager.ManagerId = employeeTable.managerId;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract manager names to array
@@ -279,13 +286,15 @@ function queryManagers() {
 //query employees by department
 function queryEmployeesByDepartment(department) {
     //sql query
+    // // , roleTable.title, roleTable.salary,
+    // INNER JOIN department ON departmentTable.departmentId = roleTable.departmentId
     const query = `
-    SELECT employee.employeeId, employee.firstName, employee.lastName, role.title, role.salary, concat(manager.firstName, " ", manager.lastName) AS managerFullName
-    FROM employee 
-    INNER JOIN role ON employee.roleId = role.roleId
-    INNER JOIN employee AS manager ON employee.managerId = manager.ManagerId
-    INNER JOIN department ON department.departmentId = role.departmentId
-    WHERE department.departmentName = "${department}";`;
+    SELECT employeeTable.employeeId, employeeTable.firstName, employeeTable.lastName concat(manager.firstName, " ", manager.lastName) AS managerFullName
+    FROM employeeTable 
+    INNER JOIN roleTable ON employeeTable.roleId = roleTable.roleId
+    INNER JOIN employeeTable AS manager ON employeeTable.managerId = manager.ManagerId
+
+    WHERE departmentTable.departmentName = "${department}";`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //build table data array from query result
@@ -309,13 +318,16 @@ function queryEmployeesByDepartment(department) {
 
 //query employees by manager
 function queryEmployeesByManager(manager) {
-    //sql query
+    // //sql query
+    // // roleTable.title, roleTable.salary, 
+    // INNER JOIN department ON departmentTable.departmentId = roleTable.departmentId
+    // departmentTable.departmentName AS departmentName, 
     const query = `
-    SELECT employee.employeeId, employee.firstName, employee.lastName, role.title, role.salary, department.departmentName AS departmentName, concat(manager.firstName, " ", manager.lastName) AS managerFullName 
-    FROM employee 
-    INNER JOIN role ON employee.roleId = role.roleId
-    INNER JOIN employee AS manager ON employee.managerId = manager.managerId
-    INNER JOIN department ON department.departmentId = role.departmentId
+    SELECT employeeTable.employeeId, employeeTable.firstName, employeeTable.lastName, concat(manager.firstName, " ", manager.lastName) AS managerFullName 
+    FROM employeeTable 
+    INNER JOIN roleTable ON employeeTable.roleId = roleTable.roleId
+    INNER JOIN employeeTable AS manager ON employeeTable.managerId = manager.managerId
+
     WHERE concat(manager.firstName, " ", manager.lastName) = "${manager}";`;
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -339,159 +351,121 @@ function queryEmployeesByManager(manager) {
 //-----add / remove / update functions
 
 //add employee
-function addEmployee() {
+function addEmployee(){
+    // Create two global array to hold 
+    let roleArr = [];
+    let managerArr = [];
 
-    //initialize newEmployee object
-    const newEmployee = {
-        employeeId: "",
-        firstName: "",
-        lastName: "",
-        roleID: "",
-        title: "",
-        managerID: "",
-        manager: "",
-    };
-    //new employee name prompt
-    inquirer
-        .prompt([{
-            name: "firstName",
-            message: "Enter first name: ",
-            validate: async (input) => {
-                if (!input.match(/^[A-Z][A-Z ]{0,}/i)) {
-                    return "Sorry, the employee's first name must contain at least 1 character and must only contain letters and spaces!".yellow;
-                }
-                return true;
-            }
-        }, {
-            name: "lastName",
-            message: "Enter last name: ",
-            validate: async (input) => {
-                if (!input.match(/^[A-Z][A-Z ]{0,}/i)) {
-                    return "Sorry, the employee's last name must contain at least 1 character and must only contain letters and spaces!".yellow;
-                }
-                return true;
-            }
-        }])
-        .then(answers => {
-            //set newEmployee name
-            newEmployee.firstName = answers.firstName;
-            newEmployee.lastName = answers.lastName;
-            //sql query for roles
+    // Create connection using promise-sql
+    promisemysql.createConnection({
+        host: "localhost",
+        port: 3306,
+        user: "root",
+        password: "root",
+        database: "EmployeeTrackerdb"
+    }
+    ).then((conn) => {
 
-        const query = `SELECT role.roleId, role.title FROM role;`;
-         connection.query(query, (err, res) => {
-        if (err) throw err;
-        //extract department names to array
-        const roles = [];
-        const rolesNames = [];
-        for (let i = 0; i < res.length; i++) {
-            roles.push({
-                roleId: res[i].roleId,
-                title: res[i].title
-            });
-            rolesNames.push(res[i].title);
+        // Query  all roles and all manager. Pass as a promise
+        return Promise.all([
+            conn.query('SELECT roleId, title FROM roleTable ORDER BY title ASC'), 
+            conn.query("SELECT employeeTable.employeeId, concat(employeeTable.firstName, ' ' ,  employeeTable.lastName) AS employeeFullName FROM employeeTable ORDER BY employeeId ASC")
+        ]);
+    }).then(([roles, managers]) => {
+
+        // Place all roles in array
+        for (i=0; i < roles.length; i++){
+            roleArr.push(roles[i].title);
         }
-        //prompt for role
-        inquirer
-            .prompt({
-                type: "list",
-                name: "rolesPromptChoice",
-                message: "Select Role",
-                choices: rolesNames
-            })
-            .then(answer => {
-                //get id of chosen department
-                const chosenRole = answer.rolesPromptChoice;
-                let chosenRoleID;
-                for (let i = 0; i < roles.length; i++) {
-                    if (roles[i].title === chosenRole) {
-                        chosenRoleID = roles[i].roleId;
-                        break;
+
+        // place all managers in array
+        for (i=0; i < managers.length; i++){
+            managerArr.push(managers[i].employeeFullName);
+        }
+
+        return Promise.all([roles, managers]);
+    }).then(([roles, managers]) => {
+
+        // add option for no manager
+        managerArr.unshift('--');
+
+        inquirer.prompt([
+            {
+                // Prompt user of their first name
+                name: "firstName",
+                type: "input",
+                message: "First name: ",
+                // Validate field is not blank
+                validate: function(input){
+                    if (input === ""){
+                        console.log("**FIELD REQUIRED**");
+                        return false;
+                    }
+                    else{
+                        return true;
                     }
                 }
-    
-            const query = `SELECT role.roleId, role.title FROM role;`;
-            connection.query(query, (err, res) => {
-                if (err) throw err;
-                //extract role names and ids to arrays
-                const roles = [];
-                const rolesNames = [];
-                for (let i = 0; i < res.length; i++) {
-                    roles.push({
-                        roleId: res[i].roleId,
-                        title: res[i].title
-                    });
-                   
-                    rolesNames.push(res[i].title);
+            },
+            {
+                // Prompt user of their last name
+                name: "lastName",
+                type: "input",
+                message: "Lastname name: ",
+                // Validate field is not blank
+                validate: function(input){
+                    if (input === ""){
+                        console.log("**FIELD REQUIRED**");
+                        return false;
+                    }
+                    else{
+                        return true;
+                    }
                 }
-                        //set newEmployee role ID 
-                        newEmployee.roleID = chosenRoleID;
-                        newEmployee.title = chosenRole;
-                        //sql query for managers
-                        const query = `
-                    SELECT DISTINCT concat(manager.firstName, " ", manager.lastName) AS fullName, manager.ManagerId
-                    FROM employee
-                    LEFT JOIN employee AS manager ON manager.ManagerId = employee.managerId;`;
-                        connection.query(query, (err, res) => {
-                            if (err) throw err;
-                            //extract manager names and ids to arrays
-                            const managers = [];
-                            const managersNames = [];
-                            for (let i = 0; i < res.length; i++) {
-                                managersNames.push(res[i].fullName);
-                                managers.push({
-                                    id: res[i].managerId,
-                                    fullName: res[i].fullName
-                                });
-                            }
-                            //prompt for manager selection
-                            inquirer
-                                .prompt({
-                                    type: "list",
-                                    name: "managerPromptChoice",
-                                    message: "Select Manager:",
-                                    choices: managersNames
-                                })
-                                .then(answer => {
-                                    //get id of chosen manager
-                                    const chosenManager = answer.managerPromptChoice;
-                                    let chosenManagerID;
-                                    for (let i = 0; i < managers.length; i++) {
-                                        if (managers[i].fullName === chosenManager) {
-                                            chosenManagerID = managers[i].managerId;
-                                            break;
-                                        }
-                                    }
-                                    //set newEmployee manager ID
-                                    newEmployee.manager = chosenManager;
-                                    newEmployee.managerId = 0;
-                                    newEmployee.roleId = 0;
-                                    newEmployee.employeeId = 0;
+            },
+            {
+                // Prompt user of their role
+                name: "role",
+                type: "list",
+                message: "What is their role?",
+                choices: roleArr
+            },{
+                // Prompt user for manager
+                name: "manager",
+                type: "list",
+                message: "Who is their manager?",
+                choices: managerArr
+            }]).then((answer) => {
 
-                                    //add employee insert sql query
-                                    
-                                    const query = "INSERT INTO employee SET ?";
-                                    connection.query(query, {
-                                        employeeID: newEmployee.employeeId,
-                                        firstName: newEmployee.firstName,
-                                        lastName: newEmployee.lastName,
-                                        title: newEmployee.title,
-                                        roleId: newEmployee.roleId,
-                                        manager: newEmployee.manager,
-                                        managerId: newEmployee.managerId,
-                                    }, (err, res) => {
-                                        if (err) throw err;
-                                        
-                                        console.log("Employee Added");
-                                        //show updated employee table
-                                        // setTimeout(queryEmployeesAll, 500);
-                                    });
-                                });
-                        });
-                    });
+                // Set variable for IDs
+                let roleId;
+                // Default Manager value as null
+                let managerId = null;
+
+                // Get ID of role selected
+                for (i=0; i < roles.length; i++){
+                    if (answer.role === roles[i].title){
+                        roleId = roles[i].roleId;
+                    }
+                }
+
+                // get ID of manager selected
+                for (i=0; i < managers.length; i++){
+                    if (answer.manager === managers[i].employeeFullName){
+                        managerId = managers[i].employeeId;
+                    }
+                }
+
+                // Add employee
+                connection.query(`INSERT INTO employee (firstName, lastName, roleId, managerId)
+                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleId}, ${title}, ${managerId}, ${manager})`, (err, res) => {
+                    if(err) return err;
+
+                    // Confirm employee has been added
+                    console.log(`\n EMPLOYEE ${answer.firstName} ${answer.lastName} ADDED...\n `);
+                    mainMenu();
+                });
             });
-        });
-});
+    });
 }
 
 function addDepartment() {
@@ -526,7 +500,7 @@ function addRole() {
     const departments = [];
     const departmentsName = [];
     //sql query
-    const query = `SELECT department.departmentId, department.departmentName FROM department`;
+    const query = `SELECT departmentTable.departmentId, departmentTable.departmentName FROM departmentTable`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         for (let i = 0; i < res.length; i++) {
@@ -573,7 +547,7 @@ function addRole() {
                     [answer.rName, answer.salNum, deptID], (err, res) => {
                         if (err) throw err;
                         console.log(
-                            `${answer.rName} was added to the ${answer.roleDept} department.`);
+                            `${answer.rName} was added to the ${answer.roleDept} departmentTable.`);
                         queryRolesOnly();
                     });
 
@@ -583,8 +557,8 @@ function addRole() {
 // Remove an employee from the database
 function removeEmployee() {
     const query = `
-    SELECT employee.employeeId, concat(employee.firstName, " ", employee.lastName) AS employeeFullName
-    FROM employee ;`;
+    SELECT employeeTable.employeeId, concat(employeeTable.firstName, " ", employeeTable.lastName) AS employeeFullName
+    FROM employeeTable ;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract employee names and ids
@@ -615,7 +589,7 @@ function removeEmployee() {
                         break;
                     }
                 }
-                const query = "DELETE FROM employee WHERE ?";
+                const query = "DELETE FROM employeeTable WHERE ?";
                 connection.query(query, {
                     id: chosenEmployeeId
                 }, (err, res) => {
@@ -631,7 +605,7 @@ function removeEmployee() {
 // Remove a role from the database
 function removeRole() {
     const query = `
-    SELECT roleId, title FROM role;`;
+    SELECT roleId, title FROM roleTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -662,7 +636,7 @@ function removeRole() {
                         break;
                     }
                 }
-                const query = "DELETE FROM role WHERE ?";
+                const query = "DELETE FROM roleTable WHERE ?";
                 connection.query(query, {
                     id: chosenRoleID
                 }, (err, res) => {
@@ -679,7 +653,7 @@ function removeRole() {
 // Remove a department from the database
 function removeDepartment() {
     const query = `
-    SELECT department.departmentId, department.departmentName FROM department;`;
+    SELECT departmentTable.departmentId, departmentTable.departmentName FROM departmentTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -709,7 +683,7 @@ function removeDepartment() {
                         break;
                     }
                 }
-                const query = "DELETE FROM department WHERE ?";
+                const query = "DELETE FROM departmentTable WHERE ?";
                 connection.query(query, {
                     id: chosenDepartmentId
                 }, (err, res) => {
@@ -731,8 +705,8 @@ function updateEmployeeRole() {
     };
     //sql query for Employees
     const query = `
-    SELECT id, concat(employee.firstName, " ", employee.lastName) AS employeeFullName
-    FROM employee ;`;
+    SELECT employeeId, concat(employeeTable.firstName, " ", employeeTable.lastName) AS employeeFullName
+    FROM employeeTable ;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract employee names and ids to arrays
@@ -764,9 +738,9 @@ function updateEmployeeRole() {
                     }
                 }
                 //set updatedEmployee id
-                updatedemployee.employeeId = chosenEmployeeID;
+                updatedemployeeTable.employeeId = chosenEmployeeID;
                 //sql query for roles
-                const query = `SELECT role.title, role.roleId FROM role;`;
+                const query = `SELECT roleTable.title, roleTable.roleId FROM roleTable;`;
                 connection.query(query, (err, res) => {
                     if (err) throw err;
                     //extract role names and ids to arrays
@@ -797,14 +771,14 @@ function updateEmployeeRole() {
                                 }
                             }
                             //set updatedEmployee role ID 
-                            updatedEmployee.roleID = chosenRoleID;
+                            updatedemployeeTable.roleID = chosenRoleID;
                             //sql query to update role
                             const query = `UPDATE employee SET ? WHERE ?`;
                             connection.query(query, [{
-                                    roleId: updatedEmployee.roleID
+                                    roleId: updatedemployeeTable.roleID
                                 },
                                 {
-                                    id: updatedemployee.employeeId
+                                    id: updatedemployeeTable.employeeId
                                 }
                             ], (err, res) => {
                                 if (err) throw err;
@@ -826,8 +800,8 @@ function updateEmployeeManager() {
     };
     //sql query for Employees
     const query = `
-    SELECT id, concat(employee.firstName, " ", employee.lastName) AS employeeFullName
-    FROM employee ;`;
+    SELECT id, concat(employeeTable.firstName, " ", employeeTable.lastName) AS employeeFullName
+    FROM employeeTable ;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract employee names and ids to arrays
@@ -859,12 +833,12 @@ function updateEmployeeManager() {
                     }
                 }
                 //set updatedEmployee id
-                updatedemployee.employeeId = chosenEmployeeID;
+                updatedemployeeTable.employeeId = chosenEmployeeID;
                 //sql query for managers
                 const query = `
             SELECT DISTINCT concat(manager.firstName, " ", manager.lastName) AS fullName, manager.ManagerId
-            FROM employee
-            LEFT JOIN employee AS manager ON manager.ManagerId = employee.managerId;`;
+            FROM employeeTable
+            LEFT JOIN employeeTable AS manager ON manager.ManagerId = employeeTable.managerId;`;
                 connection.query(query, (err, res) => {
                     if (err) throw err;
                     //extract manager names and ids to arrays
@@ -896,14 +870,14 @@ function updateEmployeeManager() {
                                 }
                             }
                             //set newEmployee manager ID
-                            updatedEmployee.managerID = chosenManagerID;
+                            updatedemployeeTable.managerID = chosenManagerID;
                             //sql query to update manager
                             const query = `UPDATE employee SET ? WHERE ?`;
                             connection.query(query, [{
-                                    managerId: updatedEmployee.managerID
+                                    managerId: updatedemployeeTable.managerID
                                 },
                                 {
-                                    id: updatedemployee.employeeId
+                                    id: updatedemployeeTable.employeeId
                                 }
                             ], (err, res) => {
                                 if (err) throw err;
@@ -921,9 +895,9 @@ function updateEmployeeManager() {
 function viewTotalBudgetByDepartment() {
     const query =
         `select d.name "Department", SUM(r.salary) "BudgetUtilized" 
-    from role r
-    JOIN department d 
-    JOIN employee e 
+    FROM roleTable r
+    JOIN departmentTable d 
+    JOIN employeeTable e 
     where r.id = e.roleId and r.id = d.id group by r.id;`;
     connection.query(query, (err, res) => {
         if (err) throw err;

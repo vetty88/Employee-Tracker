@@ -1,6 +1,6 @@
 USE employeetrackerdb; 
 
-INSERT INTO employee 
+INSERT INTO employeeTable 
     (employeeId,
     firstName, 
     lastName, 
@@ -30,7 +30,7 @@ VALUES
     1, "sales lead",
     0, "NULL");
 
-INSERT INTO role 
+INSERT INTO roleTable 
     (roleId, 
     title, 
     salary,
@@ -60,7 +60,7 @@ VALUES
         200000, 
         3, "legal"); 
 
-INSERT INTO department 
+INSERT INTO departmentTable 
     (departmentId,
     departmentName)
 VALUES      (1, "sales"), 
