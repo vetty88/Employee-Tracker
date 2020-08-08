@@ -310,25 +310,22 @@ function queryEmployeesByManager(manager) {
     // INNER JOIN department ON departmentTable.departmentId = roleTable.departmentId
     // departmentTable.departmentName AS departmentName, 
     const query = `
-    SELECT employeeTable.employeeId, employeeTable.firstName, employeeTable.lastName, concat(manager.firstName, " ", manager.lastName) AS managerFullName 
-    FROM employeeTable 
-    INNER JOIN roleTable ON employeeTable.roleId = roleTable.roleId
-    INNER JOIN employeeTable AS manager ON employeeTable.managerId = manager.managerId
+    SELECT employeeId, firstName, lastName, roleId, title, managerId, manager
+    FROM employeeTable AS eTable
 
-    WHERE concat(manager.firstName, " ", manager.lastName) = "${manager}";`;
+    WHERE manager = "${manager}";`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //build table data array from query result
         const tableData = [];
         for (let i = 0; i < res.length; i++) {
             tableData.push({
-                "ID": res[i].id,
-                "First Name": res[i].firstName,
-                "Last Name": res[i].lastName,
-                "Role": res[i].title,
-                "Salary": res[i].salary,
-                "Department": res[i].departmentName
-            });
+                    "ID": res[i].employeeId,
+                    "First Name": res[i].firstName,
+                    "Last Name": res[i].lastName,
+                    "Role ID": res[i].roleId,
+                    "Title": res[i].title,
+                });
         }
         //render screen
         renderScreen(`Employees managed by ${manager}`, tableData);
