@@ -36,15 +36,7 @@ function startApp() {
 
 // render image
 function renderImage() {
-    console.log(chalk.hex("	#228B22")(String.raw `
-#######                                                    #######                                           
-#       #    # #####  #       ####  #   # ###### ######       #    #####    ##    ####  #    # ###### #####  
-#       ##  ## #    # #      #    #  # #  #      #            #    #    #  #  #  #    # #   #  #      #    # 
-#####   # ## # #    # #      #    #   #   #####  #####        #    #    # #    # #      ####   #####  #    # 
-#       #    # #####  #      #    #   #   #      #            #    #####  ###### #      #  #   #      #####  
-#       #    # #      #      #    #   #   #      #            #    #   #  #    # #    # #   #  #      #   #  
-####### #    # #      ######  ####    #   ###### ######       #    #    # #    #  ####  #    # ###### #    # `));
-    console.log(chalk.dim("  Database\n"));
+    console.log('%cEmployee Tracker!', 'color: darkgreen; background:darkblue; font-size: 30px; font-family: Optima');
 }
 
 //render table data and menu prompt
@@ -172,13 +164,7 @@ function queryEmployeesAll() {
     FROM employeeTable AS eTable
    
     `; 
-     // SELECT roleTable.title, roleTable.salary
-    // FROM roleTable
-
-    // LEFT JOIN roleTable ON roleTable.title = employeeTable.title
-    // // LEFT JOIN roleTable ON roleTable.salary = employeeTable.salary 
-    // LEFT JOIN departmentTable ON departmentTable.departmentId = roleTable.departmentId
-
+     
     
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -202,7 +188,7 @@ function queryEmployeesAll() {
 
 //query all departments
 function queryDepartments() {
-    const query = `SELECT departmentTable.departmentName FROM departmentTable;`;
+    const query = `SELECT departmentName FROM departmentTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -216,7 +202,7 @@ function queryDepartments() {
 }
 
 function queryDepartmentsCallBack(callback) {
-    const query = `SELECT departmentTable.departmentName FROM departmentTable;`;
+    const query = `SELECT departmentName FROM departmentTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -231,7 +217,7 @@ function queryDepartmentsCallBack(callback) {
 
 // Query the departments without employees
 function queryDepartmentsOnly() {
-    const query = `SELECT departmentTable.departmentId, departmentTable.departmentName FROM departmentTable;`;
+    const query = `SELECT departmentId, departmentName FROM departmentTable;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //extract department names to array
@@ -249,7 +235,7 @@ function queryDepartmentsOnly() {
 
 // Query the Roles only and display them for viewing
 function queryRolesOnly() {
-    const query = `SELECT roleId, title FROM employeeTabletrackerdb.role;`;
+    const query = `SELECT roleId, title FROM roleTable;`;
     //build table data array from query result
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -287,28 +273,29 @@ function queryManagers() {
 function queryEmployeesByDepartment(department) {
     //sql query
     // // , roleTable.title, roleTable.salary,
-    // INNER JOIN department ON departmentTable.departmentId = roleTable.departmentId
+    
     const query = `
-    SELECT employeeTable.employeeId, employeeTable.firstName, employeeTable.lastName concat(manager.firstName, " ", manager.lastName) AS managerFullName
-    FROM employeeTable 
-    INNER JOIN roleTable ON employeeTable.roleId = roleTable.roleId
-    INNER JOIN employeeTable AS manager ON employeeTable.managerId = manager.ManagerId
+    SELECT employeeId, firstName, lastName, roleId, title, managerId, manager
+    FROM employeeTable AS eTable
 
-    WHERE departmentTable.departmentName = "${department}";`;
+    INNER JOIN departmentTable AS deTable on departmentName = departmentName
+
+    WHERE departmentName = "${department}";`;
     connection.query(query, (err, res) => {
         if (err) throw err;
         //build table data array from query result
         const tableData = [];
         for (let i = 0; i < res.length; i++) {
             tableData.push({
-                "Employee ID": res[i].employeeId,
+                "ID": res[i].employeeId,
                 "First Name": res[i].firstName,
                 "Last Name": res[i].lastName,
-                "Role Id": res[i].roleId,
-                "Role": res[i].title,
-                "Salary": res[i].salary,
+                "Role ID": res[i].roleId,
+                "Title": res[i].title,
                 "Manager ID": res[i].managerId,
-                "Manager": res[i].managerFullName,
+                "Manager": res[i].manager,
+                "Department ID": res[i].departmentId,
+                "Department Name": res[i].departmentName,
             });
         }
         //render screen
