@@ -28,6 +28,48 @@ connection.connect(function(err) {
 });
 
 //-----start the Employee Tracker
+const departmentsArray = [];
+const employeeArray = [];
+const roleArray = [];
+
+// Function to query database and gather all departments and add them to the departmentsArray.
+getDepartments = () => {
+  connection.query("SELECT * FROM departmentTable", function(err, result) {
+    if (err) throw err;
+  });
+};
+
+getEmployees = () => {
+  connection.query("SELECT * FROM employeeTable", function(err, result) {
+    if (err) throw err;
+    result.forEach(employeeTable => {
+      if (!employeeArray.includes(employeeTable.employeeId)) {
+        employeeArray.push({
+          name: employeeTable.firstName + " " + employeeTable.lastName,
+          employeeId: employeeTable.employeeId,
+          role: employeeTable.roleId,
+          managerId: employeeTable.managerId
+        });
+      }
+    });
+  });
+};
+
+getRoles = () => {
+  connection.query("SELECT * FROM roleTable", function(err, result) {
+    if (err) throw err;
+    result.forEach(roleTable => {
+      if (!roleArray.includes(roleTable.roleId)) {
+        roleArray.push(roleTable.title);
+      }
+    });
+  });
+};
+
+getDepartments();
+getEmployees();
+getRoles();
+
 function startApp() {
     clear();
     renderImage();
@@ -355,76 +397,75 @@ function queryEmployeesByManager(manager) {
 //-----add / remove / update functions
 
 //add employee
-function addEmployee() {
-     //sql query for roles
-
-     const query = `
-     SELECT roletable.roleId, roletable.title
-     FROM roletable ;`;
-     
-     connection.query(query, (err, res) => {
-        console.log(res);
-         if (err) throw err;
-         //extract role names and ids
-         let role = [];
-         let roleNames = [];
-         for (let i = 0; i < res.length; i++) {
-             role.push({
-                 roleId: res[i].roleId,
-                 title: res[i].title
-             });
-             roleNames.push(res[i].title);
-         }
-
-         
-
+addEmployee = () => {
     inquirer
       .prompt([
         {
           type: "input",
           message: "Please enter the employee's first name.",
-          name: "firstName"
+          name: "employeeFirstName"
         },
         {
           type: "input",
           message: "Please enter the employee's last name.",
-          name: "lastName"
+          name: "employeeLastName"
         },
         {
           type: "list",
           message: "Please select the employee's role.",
           name: "employeeRole",
-          choices: roleNames
+          choices: roleArray
         },
         {
           type: "list",
           message: "Please select the employee's manager.",
           name: "employeeManager",
-          choices: employeeArray 
-          
+          choices: employeeArray
         }
       ])
-    
-      .then((answer) => {
-                     //get id of chosen employee
-                     const chosenRole = answer.employeeRole;
-                     let chosenRoleId;
-                     for (let i = 0; i < roleNames.length; i++) {
-                         if (role[i].title === chosenRole) {
-                             chosenRoleId = role[i].roleId;
-                             break;
-                         }
-                     }
-                     console.log(chosenRoleId);
-                     console.log(employeeArray);
-        const query = `INSERT INTO employeeTable (firstName, lastName, roleId, title, managerId, manager) VALUES (?, ?, ?, ?, ?, ?);`;
-        connection.query(query, [answer.firstName, answer.lastName, chosenRoleId , answer.employeeRole, 100, answer.employeeManager], (err, res) => {
+      .then(function({
+        employeeFirstName,
+        employeeLastName,
+        employeeRole,
+        employeeManager
+      }) {
+        // Due to the way inquirer handles response objects, setting new variables to translate employeeRole and
+        // employeeManager into their corresponding IDs.
+        let roleId;
+        let managerId;
+        connection.query("SELECT * FROM roleTable", function(err, res) {
+          if (err) throw err;
+          res.forEach(roleTable => {
+            if (roleTable.title === employeeRole) {
+              roleId = roleTable.roleId;
+            }
+          });
+          connection.query("SELECT * FROM employeeTable", function(err, res) {
             if (err) throw err;
-            console.log("  New employee added successfully!");
+            res.forEach(employeeTable => {
+              if (
+                employeeTable.firstName + " " + employeeTable.lastName ===
+                employeeManager
+              ) {
+                managerId = employeeTable.employeeId;
+              }
             });
+            connection.query(
+              "INSERT INTO employeeTable (firstName, lastName, roleId, title, managerId, manager) VALUES (?, ?, ?, ?, ?, ?);",
+              [employeeFirstName, employeeLastName, roleId, employeeRole, managerId, employeeManager],
+              function(err, res) {
+                if (err) throw err;
+                console.log(
+                    `${employeeFirstName} was added.`);
+                    //show updated employee table
+                    setTimeout(queryEmployeesAll, 2500);
+              }
+            );
+          });
         });
-    });
-    }
+      });
+  };
+    
 
 
 
@@ -661,10 +702,10 @@ function removeDepartment() {
 
 function updateEmployeeRole() {
     //initialize updatedEmployee object
-    let updatedEmployee = {
-        employeeId: 0,
-        roleID: 0,
-    };
+    // let updatedEmployee = {
+    //     employeeId: 0,
+    //     roleID: 0,
+    // };
     //sql query for Employees
     const query = `
     SELECT employeeId, concat(employeeTable.firstName, " ", employeeTable.lastName) AS employeeFullName
@@ -735,18 +776,19 @@ function updateEmployeeRole() {
                             //set updatedEmployee role ID 
                             // updatedemployeeTable.roleID = chosenRoleId;
                             //sql query to update role
-                            const query = `UPDATE employeeTable SET ? WHERE ?`;
-                            connection.query(query, [{
-                                    roleId: chosenRoleId
+                            const query = `UPDATE employeetable SET ? WHERE ?`;
+                            connection.query(query, [
+                                {
+                                  roleId: chosenRoleId, title: chosenRole
                                 },
                                 {
-                                    employeeId: employees.employeeId
+                                  employeeId: chosenEmployeeId
                                 }
-                            ], (err, res) => {
+                                ], (err, res) => {
                                 if (err) throw err;
                                 console.log("Employee Role Updated");
                                 //show updated employee table
-                                setTimeout(queryEmployeesAll, 500);
+                                setTimeout(queryEmployeesAll, 3000);
                             });
                         });
                 });
@@ -756,13 +798,10 @@ function updateEmployeeRole() {
 
 function updateEmployeeManager() {
     //initialize updatedEmployee object
-    const updatedEmployee = {
-        id: 0,
-        managerID: 0
-    };
+//   ?
     //sql query for Employees
     const query = `
-    SELECT id, concat(employeeTable.firstName, " ", employeeTable.lastName) AS employeeFullName
+    SELECT employeeId, concat(employeeTable.firstName, " ", employeeTable.lastName) AS employeeFullName
     FROM employeeTable ;`;
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -771,7 +810,7 @@ function updateEmployeeManager() {
         let employeesNames = [];
         for (let i = 0; i < res.length; i++) {
             employees.push({
-                id: res[i].employeeId,
+                employeeId: res[i].employeeId,
                 fullName: res[i].employeeFullName
             });
             employeesNames.push(res[i].employeeFullName);
@@ -787,20 +826,20 @@ function updateEmployeeManager() {
             .then(answer => {
                 //get id of chosen employee
                 const chosenEmployee = answer.employeePromptChoice;
-                let chosenEmployeeID;
+                let chosenEmployeeId;
                 for (let i = 0; i < employees.length; i++) {
                     if (employees[i].fullName === chosenEmployee) {
-                        chosenEmployeeID = employees[i].employeeId;
+                        chosenEmployeeId = employees[i].employeeId;
                         break;
                     }
                 }
                 //set updatedEmployee id
-                updatedemployeeTable.employeeId = chosenEmployeeID;
+                // updatedemployeeTable.employeeId = chosenEmployeeID;?
                 //sql query for managers
                 const query = `
-            SELECT DISTINCT concat(manager.firstName, " ", manager.lastName) AS fullName, manager.ManagerId
-            FROM employeeTable
-            LEFT JOIN employeeTable AS manager ON manager.ManagerId = employeeTable.managerId;`;
+                SELECT DISTINCT concat(manager.firstName, " ", manager.lastName) AS fullName, manager.ManagerId
+                FROM employeeTable
+                LEFT JOIN employeeTable AS manager ON manager.ManagerId = employeeTable.managerId;`;
                 connection.query(query, (err, res) => {
                     if (err) throw err;
                     //extract manager names and ids to arrays
@@ -809,7 +848,7 @@ function updateEmployeeManager() {
                     for (let i = 0; i < res.length; i++) {
                         managersNames.push(res[i].fullName);
                         managers.push({
-                            id: res[i].id,
+                            id: res[i].managerId,
                             fullName: res[i].fullName
                         });
                     }
@@ -824,28 +863,32 @@ function updateEmployeeManager() {
                         .then(answer => {
                             //get id of chosen manager
                             const chosenManager = answer.managerPromptChoice;
-                            let chosenManagerID;
+
+                            console.log(chosenManager);
+                            let chosenManagerId;
                             for (let i = 0; i < managers.length; i++) {
                                 if (managers[i].fullName === chosenManager) {
-                                    chosenManagerID = managers[i].managerId;
+                                    chosenManagerId = managers[i].managerId;
                                     break;
                                 }
                             }
                             //set newEmployee manager ID
-                            updatedemployeeTable.managerID = chosenManagerID;
+                            // updatedemployeeTable.managerID = chosenManagerID;
                             //sql query to update manager
-                            const query = `UPDATE employee SET ? WHERE ?`;
-                            connection.query(query, [{
-                                    managerId: updatedemployeeTable.managerID
+                            const query2 = `UPDATE employeetable SET ? WHERE ?`;
+                            connection.query(query2, [
+                                {
+                                  managerId: chosenManagerId, manager: chosenManager
                                 },
                                 {
-                                    id: updatedemployeeTable.employeeId
+                                  employeeId: chosenEmployeeId
                                 }
-                            ], (err, res) => {
+                                ], (err, res) => {
                                 if (err) throw err;
-                                console.log("Employee Role Updated");
+                                console.log(chosenManagerId);
+                                console.log("Employee Manager Updated");
                                 //show updated employee table
-                                setTimeout(queryEmployeesAll, 500);
+                                setTimeout(queryEmployeesAll, 3000);
                             });
                         });
                 });
