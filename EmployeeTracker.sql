@@ -7,10 +7,10 @@ CREATE TABLE employeeTable (
     employeeId  INT AUTO_INCREMENT ,
     firstName VARCHAR(30) NOT NULL, 
     lastName VARCHAR(30) NOT NULL,
-    roleId INT NOT NULL,
-    title VARCHAR(30) NOT NULL,
-    managerId INT NOT NULL,
-    manager VARCHAR(30) NOT NULL, 
+    roleId INT,
+    title VARCHAR(30),
+    managerId INT,
+    manager VARCHAR(30), 
     PRIMARY KEY (employeeId)
 );
 
@@ -19,7 +19,7 @@ CREATE TABLE roleTable (
     title VARCHAR(30) NOT NULL, 
     salary DECIMAL (10,2) NOT NULL, 
     departmentId INT,
-    departmentName VARCHAR(30)  NOT NULL,
+    departmentName VARCHAR(30),
     PRIMARY KEY (roleId)
 );
 
